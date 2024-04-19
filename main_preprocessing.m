@@ -27,6 +27,11 @@ preprocessing_pipeline
 simulation_data_extraction
 
 
+%% Analyse real data
+
+analysis_real_data
+
+
 %% Calculate Phase accuracy
 
 phase_accuracy
