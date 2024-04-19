@@ -16,8 +16,8 @@ subjects = 1:38;
 formatSpec = '%03.0f';
 
 % settings
-path.load = '\data_epoched\';
-path.save = '\data_preprocessed\';
+path.load = '\data_epoched';
+path.save = '\data_preprocessed';
 mkdir(data.save)
 
 % settings for montage
