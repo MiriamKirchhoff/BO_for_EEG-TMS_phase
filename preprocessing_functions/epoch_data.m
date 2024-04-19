@@ -23,7 +23,7 @@ formatSpec = '%03.0f';
 
 % paths
 path.load = '\sub-';
-path.save = '\data_epoched\';
+path.save = '\data_epoched';
 
 % create save location
 mkdir(path.save)
