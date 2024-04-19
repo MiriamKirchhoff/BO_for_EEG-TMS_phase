@@ -30,6 +30,7 @@ end
 % settings for downsampling
 ds_fs = 1000;       % downsampling freqency in Hz
 
+
 %% Iterate over subjects
 
 for idx_subject = subjects  % iterate over subjects
