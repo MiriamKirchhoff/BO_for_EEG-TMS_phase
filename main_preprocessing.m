@@ -1,6 +1,11 @@
-%% main_REFTEP_preprocesing
+%% main_preprocesing
 
 % Lists the scripts used for preprocessing
+% Requires EEGlab and fieldtrip including tesa on the path
+
+%% Initialise EEGlab
+
+eeglab
 
 
 %% Load the raw data and epoch it
