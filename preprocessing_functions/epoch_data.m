@@ -21,7 +21,7 @@ epoch_window_EMG = [-.1 .1];            % ms
 mep_amp.channels = {'APBr', 'FDIr'};    % names of MEP channels
 formatSpec = '%03.0f';
 
-% saths
+% paths
 path.load = '\sub-';
 path.save = '\data_epoched\';
 
