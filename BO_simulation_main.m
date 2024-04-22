@@ -9,7 +9,7 @@
 % author    Miriam Kirchhoff
 % project   C2B
 
-clear all
+clear
 close all
 
 %% SETTINGS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
