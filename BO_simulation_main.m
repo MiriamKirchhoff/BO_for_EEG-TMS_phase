@@ -19,20 +19,33 @@ tic
 
 %% INITIALIZATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Load data
+%% Load or generate data
 
-disp('Loading data')
-load(settings.path_load)
-disp('Loading data completed')
+% if path was specified, load data
+if settings.path_load
+    disp('Loading data')
+    load(settings.path_load)
+    disp('Loading data completed')
+else
+    % if path was not specified, generate random data
+    disp('Generate example data')
+    [all_results, all_trials] = generate_example_data(settings);
+    disp('Generating data completed')
+end
+
 current_datetime = strrep(datestr(now),':','_');
+
 
 %% Generate computation grid
 
 % number of potential stimulation targets
 init.T_N = 200;
+
 % min and max of stimulation targets
 init.T_min = -pi;
 init.T_max = pi;
+
+% number of targets in the grid search
 grid_number = 8;
 T = linspace(init.T_min, init.T_max, init.T_N);
 n = numel(T);
@@ -41,6 +54,7 @@ iter_max = settings.n_iterations + 1;
 
 %% Initialize result arrays
 
+% store dimensions of results arrays
 dim = ["reps", "iter", "acq", "mod", "sub"];
 simulation_results_opt_estimate = NaN(settings.n_repetitions, settings.n_iterations+ 1, length(settings.type_acquisition), length(settings.type_model), length(settings.subjects));
 simulation_results_error        = simulation_results_opt_estimate;
@@ -57,7 +71,11 @@ end % if settings.plotting
 % iterate over subject datasets
 for subject_idx = 1:length(settings.subjects)
     current_subject = settings.subjects(subject_idx);
-    % generate ground truth for computation grid
+
+    % generate ground truth for computation grid using sliding window
+    % method
+
+    % settings
     subject_data.phases = all_trials.phase(...
         all_trials.participant == current_subject & ~all_trials.outlier_all);
     subject_data.transformed_mep_amplitudes = all_trials.MEP_log(...
@@ -67,6 +85,8 @@ for subject_idx = 1:length(settings.subjects)
     simulation_parameters.wintype = 'winsize';
     simulation_parameters.winsize = (init.T_max - init.T_min)*simulation_parameters.percentage_data;  % window size of simulation
     simulation_parameters.limits =  [init.T_min, init.T_max];
+
+    % calculation
     ground_truth = simulation_ground_truth_slidewindow(simulation_parameters, subject_data, 0, false, false, false);
     clear simulation_parameters subject_data
 
@@ -85,6 +105,7 @@ for subject_idx = 1:length(settings.subjects)
             % if plotting == 0
             for repetition_current = 1:settings.n_repetitions
 
+                % output message: current repetition
                 fprintf(['start repetition %g/%g, acquisition %g/%g, ' ...
                     'model %g/%g, subject %g/%g \n'], ...
                     repetition_current, settings.n_repetitions, ...
@@ -101,8 +122,7 @@ for subject_idx = 1:length(settings.subjects)
                 X_ind = [];
                 acq = [];
 
-                % Get initial measurement locations X_ind
-
+                % Get initial measurement locations
                 temp = floor(length(T)/settings.n_init_samples);
 
                 % select random point in first 1/n area
@@ -114,7 +134,7 @@ for subject_idx = 1:length(settings.subjects)
                 end % for i = 1:settings.n_init_samples-1
                 % clear i temp
 
-                % Start simulation loop
+                %% SIMULATION LOOP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
                 for iteration = 1:iter_max
 
@@ -134,8 +154,9 @@ for subject_idx = 1:length(settings.subjects)
                     % clear t_new X_new
 
 
-                    %% FIT MODEL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    %% FIT MODEL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+                    % select which model to calculate
                     switch current_model
                         case 'GP'
                             if iteration == 1
@@ -152,8 +173,9 @@ for subject_idx = 1:length(settings.subjects)
                     end % switch current_model
 
 
-                    %% ACQUISITION FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    %% ACQUISITION FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+                    % Select which acquisition function to fit
                     switch current_acquisition
                         case 'KG'
                             % Choose the next stimulation parameter with the knowledge gradient.
@@ -205,15 +227,17 @@ for subject_idx = 1:length(settings.subjects)
                     simulation_results_error(repetition_current, ...
                         iteration, acquisition_idx, model_idx, subject_idx) = circ_error;
                     
-                    %% ONLINE PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    % parfor must be replaced by for to run online plotting
+                    %% ONLINE PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    % must be deleted to allow parallel processing
 
                     if settings.plotting
+                        BO_online_plot
                         % check if plot exists, else build it
                         if ~sum(ismember(findall(0,'type','figure'),online_plot))
                             online_plot = figure('Name','Measured Data',...
                                 'NumberTitle','off');
                         end
+
                         subplot(2,1,1)
                         hold off
                         % plot data points
@@ -235,25 +259,23 @@ for subject_idx = 1:length(settings.subjects)
                         % plot next data point
                         xline(T(X_new), 'LineWidth',2)
 
-                        % plot acquisition function
-                        try
-                            plot(T,(acq*0.1-max(acq*0.1)+min(Y_gt)), ':k', 'LineWidth',2)
-                        end % if acq
+                        % plot acquisition function if converged
+                        try; plot(T,(acq*0.1-max(acq*0.1)+min(Y_gt)), ':k', 'LineWidth',2); end 
 
                         title(['Simulation fitting ' current_model ' with acq ' current_acquisition ': ' num2str(length(t)) ' samples'])
                         xlabel('Phase [rad]')
                         ylim([min(Y_gt) - range(Y_gt), max(Y_gt) + range(Y_gt)])
-                        grid on
-                        drawnow
+                        grid on; drawnow
 
                         % plot error over iterations
                         subplot(2,1,2)
                         hold off
-                        measured_values = simulation_results_error(:, ...
-                            :, acquisition_idx, model_idx, subject_idx);
+                        measured_values = simulation_results_error ...
+                            (:, :, acquisition_idx, model_idx, subject_idx);
                         plot(measured_values', 'LineWidth',1, 'Color', [0 0 0 0.2])
                         hold on
-                        plot(mean(measured_values, 'omitnan'), '-o', 'LineWidth',2, 'Color', [160 20 20]/255, 'MarkerFaceColor',[160 20 20]/255)
+                        plot(mean(measured_values, 'omitnan'), '-o', ...
+                            'LineWidth',2, 'Color', [160 20 20]/255, 'MarkerFaceColor',[160 20 20]/255)
 
                         grid on
                         ylabel('error score [rad]')
@@ -267,6 +289,7 @@ for subject_idx = 1:length(settings.subjects)
             clear i temp Y temp temp2 circ_error noncirc_error m_N S_N beta phi_test t_new X_new
 
             % Intermediate save
+            mkdir('\Results\')
             save(['\Results\Intermediate_Results_' current_datetime], '-v7.3');
         end % for acquisition_idx = 1:length(settings.type_acquisition)
     end % for model_idx = 1:length(settings.type_model)
@@ -274,8 +297,11 @@ end % subject_idx = 1:length(settings.subjects) % iterate over subject datasets
 
 %% SAVE DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 toc
-save([path.save '\Results' current_datetime], '-v7.3');
+close all
 
+disp('start saving data')
+save([settings.path_save '\Results\simulation_output'], '-v7.3');
+disp('saving completed.')
 
 
 
