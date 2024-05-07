@@ -49,8 +49,8 @@ for idx_participant = 1:length(settings.subjects)
     % Phase between +/- pi
     phase_shift = rand(1)*2*pi - pi;
 
-    % Amplitude between 0.5 and 1
-    amplitude = rand(1) * 0.5 + 0.5;
+    % Amplitude between 0.3 and 0.4
+    amplitude = rand(1) * 0.1 + 0.3;
 
     % generate random phase locations
     phase = rand(1, N)*2*pi - pi;

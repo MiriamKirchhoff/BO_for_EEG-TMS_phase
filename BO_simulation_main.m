@@ -15,6 +15,7 @@ close all
 %% SETTINGS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 settings = BO_settings;
+settings.type_acquisition = {'probEI', 'EI', 'random'};
 tic
 
 %% INITIALIZATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -214,7 +215,21 @@ for subject_idx = 1:length(settings.subjects)
 
                         case 'EI'
                             % Choose the next stimulation parameter with the expected improvement.
-                            [X_new,acq] = tms_nextpoint_ei(y, y_var, y_X);
+                            [X_new,acq] = tms_nextpoint_ei(y, y_var, GP_fit.postmeanX);
+
+                        case 'probEI'
+                            % Choose the next stimulation parameter with the expected improvement.
+                            [~,acq] = tms_nextpoint_ei(y, y_var, GP_fit.postmeanX);
+
+                            % select the next target randomly from the acq,
+                            % interpreting the acq as the probability of
+                            % the target being selected
+                            Y_new = randsrc(1,1,[T ; (acq/sum(acq))']);
+                            X_new = find(T == Y_new);
+
+                            %disp('jfköasdj')
+
+
                     end
 
                     %% Save data
@@ -231,7 +246,7 @@ for subject_idx = 1:length(settings.subjects)
                     % must be deleted to allow parallel processing
 
                     if settings.plotting
-                        BO_online_plot
+                        
                         % check if plot exists, else build it
                         if ~sum(ismember(findall(0,'type','figure'),online_plot))
                             online_plot = figure('Name','Measured Data',...
@@ -260,11 +275,22 @@ for subject_idx = 1:length(settings.subjects)
                         xline(T(X_new), 'LineWidth',2)
 
                         % plot acquisition function if converged
-                        try; plot(T,(acq*0.1-max(acq*0.1)+min(Y_gt)), ':k', 'LineWidth',2); end 
+                        acq_plot = acq - min(acq);
+                        acq_plot = acq_plot / max(acq_plot);
+                        try 
+                            plot(T,(acq_plot - 1 + min(Y_gt)), ':k', 'LineWidth',2);
+                            no_acq = 0;
+                        catch 
+                            no_acq = 1;
+                        end 
 
                         title(['Simulation fitting ' current_model ' with acq ' current_acquisition ': ' num2str(length(t)) ' samples'])
                         xlabel('Phase [rad]')
-                        ylim([min(Y_gt) - range(Y_gt), max(Y_gt) + range(Y_gt)])
+                        if no_acq
+                            ylim([min(Y_gt), max(Y_gt)])
+                        else
+                            ylim([min(Y_gt) - abs(min(acq_plot-1)), max(Y_gt)])
+                        end
                         grid on; drawnow
 
                         % plot error over iterations

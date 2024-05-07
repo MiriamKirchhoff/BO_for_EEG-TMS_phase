@@ -64,8 +64,12 @@ if contains(answer{4}, 'grid','IgnoreCase',true)
     init.type_acquisition = [init.type_acquisition, {'grid'}]; end
 if contains(answer{4}, 'random','IgnoreCase',true)
     init.type_acquisition = [init.type_acquisition, {'random'}]; end
-if contains(answer{4}, 'EI','IgnoreCase',true)
+if strcmp(answer{4}, 'EI')
     init.type_acquisition = [init.type_acquisition, {'EI'}]; end
+if strcmp(answer{4}, 'probEI')
+    init.type_acquisition = [init.type_acquisition, {'probEI'}]; end
+
+
 
 
 init.formatSpec = '%03.0f';

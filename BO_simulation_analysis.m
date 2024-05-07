@@ -184,6 +184,8 @@ t = tiledlayout(2, 2, 'TileSpacing','compact');
 
 mdl_names = {'Gaussian Process', 'Bayesian Regression'};
 acq_names = {'Adaptive sampling', 'Random sampling'};
+acq_names = settings.type_acquisition;
+mdl_names = settings.type_model;
 
 % for idx_subject_subselection = 1:numel(subject_subselection)
 sub = 1:numel(settings.subjects);
