@@ -104,7 +104,7 @@ for subject_idx = 1:length(settings.subjects)
 
             % this for can be replaced by parallel processing using parfor
             % if plotting == 0
-            for repetition_current = 1:settings.n_repetitions
+            parfor repetition_current = 1:settings.n_repetitions
 
                 % output message: current repetition
                 fprintf(['start repetition %g/%g, acquisition %g/%g, ' ...
@@ -245,71 +245,71 @@ for subject_idx = 1:length(settings.subjects)
                     %% ONLINE PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % must be deleted to allow parallel processing
 
-                    if settings.plotting
-                        
-                        % check if plot exists, else build it
-                        if ~sum(ismember(findall(0,'type','figure'),online_plot))
-                            online_plot = figure('Name','Measured Data',...
-                                'NumberTitle','off');
-                        end
-
-                        subplot(2,1,1)
-                        hold off
-                        % plot data points
-                        scatter(T(X_ind), t, 'filled', 'k', 'MarkerFaceAlpha', 0.2, 'Markeredgealpha', 0.2)
-                        xlim([-pi pi])
-                        hold on
-
-                        % plot ground truth
-                        plot(ground_truth.X, ground_truth.mean, '--k')
-                        Y_gt = [ground_truth.mean+ground_truth.sd, flip(ground_truth.mean-ground_truth.sd)];
-                        X_area = [ground_truth.X, flip(ground_truth.X)];
-                        fill(X_area, Y_gt, 'm', 'LineStyle', 'none', 'FaceColor', 'k', 'FaceAlpha', 0.1)
-
-                        % plot estimate
-                        plot(T,y, 'Color', [160 20 20]/255, 'LineWidth',2)
-                        Y = [(y+y_var)', flip(y-y_var)'];
-                        fill(X_area, Y, 'm', 'LineStyle', 'none', 'FaceColor', [160 20 20]/255, 'FaceAlpha', 0.1)
-
-                        % plot next data point
-                        xline(T(X_new), 'LineWidth',2)
-
-                        % plot acquisition function if converged
-                        acq_plot = acq - min(acq);
-                        acq_plot = acq_plot / max(acq_plot);
-                        try 
-                            plot(T,(acq_plot - 1 + min(Y_gt)), ':k', 'LineWidth',2);
-                            no_acq = 0;
-                        catch 
-                            no_acq = 1;
-                        end 
-
-                        title(['Simulation fitting ' current_model ' with acq ' current_acquisition ': ' num2str(length(t)) ' samples'])
-                        xlabel('Phase [rad]')
-                        if no_acq
-                            ylim([min(Y_gt), max(Y_gt)])
-                        else
-                            ylim([min(Y_gt) - abs(min(acq_plot-1)), max(Y_gt)])
-                        end
-                        grid on; drawnow
-
-                        % plot error over iterations
-                        subplot(2,1,2)
-                        hold off
-                        measured_values = simulation_results_error ...
-                            (:, :, acquisition_idx, model_idx, subject_idx);
-                        plot(measured_values', 'LineWidth',1, 'Color', [0 0 0 0.2])
-                        hold on
-                        plot(mean(measured_values, 'omitnan'), '-o', ...
-                            'LineWidth',2, 'Color', [160 20 20]/255, 'MarkerFaceColor',[160 20 20]/255)
-
-                        grid on
-                        ylabel('error score [rad]')
-                        xlabel('iteration')
-                        xlim([1 max(sum(~isnan(measured_values(1,:))),2)])
-                        ylim([0 pi])
-
-                    end % if settings.plotting
+                    % if settings.plotting
+                    % 
+                    %     % check if plot exists, else build it
+                    %     if ~sum(ismember(findall(0,'type','figure'),online_plot))
+                    %         online_plot = figure('Name','Measured Data',...
+                    %             'NumberTitle','off');
+                    %     end
+                    % 
+                    %     subplot(2,1,1)
+                    %     hold off
+                    %     % plot data points
+                    %     scatter(T(X_ind), t, 'filled', 'k', 'MarkerFaceAlpha', 0.2, 'Markeredgealpha', 0.2)
+                    %     xlim([-pi pi])
+                    %     hold on
+                    % 
+                    %     % plot ground truth
+                    %     plot(ground_truth.X, ground_truth.mean, '--k')
+                    %     Y_gt = [ground_truth.mean+ground_truth.sd, flip(ground_truth.mean-ground_truth.sd)];
+                    %     X_area = [ground_truth.X, flip(ground_truth.X)];
+                    %     fill(X_area, Y_gt, 'm', 'LineStyle', 'none', 'FaceColor', 'k', 'FaceAlpha', 0.1)
+                    % 
+                    %     % plot estimate
+                    %     plot(T,y, 'Color', [160 20 20]/255, 'LineWidth',2)
+                    %     Y = [(y+y_var)', flip(y-y_var)'];
+                    %     fill(X_area, Y, 'm', 'LineStyle', 'none', 'FaceColor', [160 20 20]/255, 'FaceAlpha', 0.1)
+                    % 
+                    %     % plot next data point
+                    %     xline(T(X_new), 'LineWidth',2)
+                    % 
+                    %     % plot acquisition function if converged
+                    %     acq_plot = acq - min(acq);
+                    %     acq_plot = acq_plot / max(acq_plot);
+                    %     try 
+                    %         plot(T,(acq_plot - 1 + min(Y_gt)), ':k', 'LineWidth',2);
+                    %         no_acq = 0;
+                    %     catch 
+                    %         no_acq = 1;
+                    %     end 
+                    % 
+                    %     title(['Simulation fitting ' current_model ' with acq ' current_acquisition ': ' num2str(length(t)) ' samples'])
+                    %     xlabel('Phase [rad]')
+                    %     if no_acq
+                    %         ylim([min(Y_gt), max(Y_gt)])
+                    %     else
+                    %         ylim([min(Y_gt) - abs(min(acq_plot-1)), max(Y_gt)])
+                    %     end
+                    %     grid on; drawnow
+                    % 
+                    %     % plot error over iterations
+                    %     subplot(2,1,2)
+                    %     hold off
+                    %     measured_values = simulation_results_error ...
+                    %         (:, :, acquisition_idx, model_idx, subject_idx);
+                    %     plot(measured_values', 'LineWidth',1, 'Color', [0 0 0 0.2])
+                    %     hold on
+                    %     plot(mean(measured_values, 'omitnan'), '-o', ...
+                    %         'LineWidth',2, 'Color', [160 20 20]/255, 'MarkerFaceColor',[160 20 20]/255)
+                    % 
+                    %     grid on
+                    %     ylabel('error score [rad]')
+                    %     xlabel('iteration')
+                    %     xlim([1 max(sum(~isnan(measured_values(1,:))),2)])
+                    %     ylim([0 pi])
+                    % 
+                    % end % if settings.plotting
                 end % for iteration = 1:settings.n_iterations
             end % for repetition_current = 1:settings.repetitions
             clear i temp Y temp temp2 circ_error noncirc_error m_N S_N beta phi_test t_new X_new
