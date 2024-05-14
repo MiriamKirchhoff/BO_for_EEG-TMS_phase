@@ -15,7 +15,7 @@ close all
 %% SETTINGS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 settings = BO_settings;
-settings.type_acquisition = {'probEI', 'EI', 'random'};
+settings.type_acquisition = {'probKG', 'KG', 'random'};
 tic
 
 %% INITIALIZATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -197,6 +197,44 @@ for subject_idx = 1:length(settings.subjects)
                                         acq = NaN(size(T));
                                         disp('selecting random simulation target due to nonconvergence')
                                     end
+                            end
+
+                        case 'probKG'
+                            % Choose the next stimulation parameter with the knowledge gradient.
+                            % Works well in 1D, but in higher dimensional cases,
+                            % computationally cheaper acquisition function may be needed.
+                            switch current_model
+                                case 'GP'
+                                    [X_new,acq] = tms_nextpoint_kg(X,t',GP_fit.mu0,...
+                                        GP_fit.a0,GP_fit.a1,GP_fit.lam2,T,GP_fit.muz3,...
+                                        ones(n,1)*GP_fit.lam2(1),GP_fit.kernel);
+
+                                otherwise
+                                    [X_new,acq] = blr_nextpoint_kg(X', t', beta, m_N, S_N, T');
+
+                                    % if acquisition function is noncontinuous
+                                    if sum(isnan(acq))
+                                        X_new = randi(length(T));
+                                        acq = NaN(size(T));
+                                        disp('selecting random simulation target due to nonconvergence')
+                                    end
+
+                                    acq = acq';
+                            end
+
+                            % if acquisition function is noncontinuous
+                            if sum(isnan(acq))
+                                X_new = randi(length(T));
+                                acq = NaN(size(T));
+                                disp('selecting random simulation target due to nonconvergence')
+                            else
+
+                                % select the next target randomly from the acq,
+                                % interpreting the acq as the probability of
+                                % the target being selected
+
+                                Y_new = randsrc(1,1,[T ; (acq/sum(acq))']);
+                                X_new = find(T == Y_new);
                             end
 
                         case 'grid'
