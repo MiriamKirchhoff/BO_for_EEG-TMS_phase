@@ -15,7 +15,7 @@ close all
 %% SETTINGS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 settings = BO_settings;
-settings.type_acquisition = {'probKG', 'KG', 'random'};
+settings.type_acquisition = {'probEI', 'EI', 'random'};
 tic
 
 %% INITIALIZATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -259,13 +259,19 @@ for subject_idx = 1:length(settings.subjects)
                             % Choose the next stimulation parameter with the expected improvement.
                             [~,acq] = tms_nextpoint_ei(y, y_var, GP_fit.postmeanX);
 
-                            % select the next target randomly from the acq,
-                            % interpreting the acq as the probability of
-                            % the target being selected
-                            Y_new = randsrc(1,1,[T ; (acq/sum(acq))']);
-                            X_new = find(T == Y_new);
+                            if sum(isnan(acq))
+                                X_new = randi(length(T));
+                                acq = NaN(size(T));
+                                disp('selecting random simulation target due to nonconvergence')
+                            else
 
-                            %disp('jfköasdj')
+                                % select the next target randomly from the acq,
+                                % interpreting the acq as the probability of
+                                % the target being selected
+
+                                Y_new = randsrc(1,1,[T ; (acq/sum(acq))']);
+                                X_new = find(T == Y_new);
+                            end
 
 
                     end
